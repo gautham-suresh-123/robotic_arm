@@ -1,0 +1,12 @@
+{
+    "0": "BASE_RIGHT",
+    "1": "Base_Left",
+    "2": "ELBOW_DOWN",
+    "3": "ELBOW_UP",
+    "4": "GRIP_CLOSE",
+    "5": "GRIP_OPEN",
+    "6": "LEFT",
+    "7": "SHOULDER_DOWN",
+    "8": "SHOULDER_UP",
+    "9": "STOP"
+}

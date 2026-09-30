@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Robotic Arm — Control Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================
+   TOKENS
+========================================== */
+:root {
+  --bg:        #080c14;
+  --surface:   #0d1520;
+  --surface2:  #111b2e;
+  --border:    rgba(99,179,237,0.12);
+  --accent:    #63b3ed;
+  --accent2:   #4fd1c5;
+  --warn:      #f6ad55;
+  --danger:    #fc8181;
+  --success:   #68d391;
+  --text:      #e2e8f0;
+  --muted:     #718096;
+  --font-ui:   'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================
+   RESET & BASE
+========================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ==========================================
+   GRID LAYOUT
+========================================== */
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo-wrap { display: flex; align-items: center; gap: 12px; }
+
+.logo-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  line-height: 1.2;
+}
+.logo-text small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.header-right { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+/* Connection pill */
+.conn-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color .3s;
+}
+.conn-pill.connected   { border-color: var(--success); }
+.conn-pill.disconnected{ border-color: var(--danger); }
+
+.conn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background .3s, box-shadow .3s;
+}
+.conn-pill.connected   .conn-dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: breathe 2s infinite; }
+.conn-pill.disconnected .conn-dot { background: var(--danger);  box-shadow: 0 0 8px var(--danger); }
+
+@keyframes breathe {
+  0%,100%{ opacity:1; } 50%{ opacity:.4; }
+}
+
+/* IP editor */
+.ip-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.ip-wrap label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.ip-wrap input {
+  background: none; border: none; outline: none;
+  font-family: var(--font-mono); font-size: 13px; color: var(--accent);
+  width: 140px;
+}
+
+/* Mode badge */
+.mode-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: rgba(99,179,237,.1);
+  border: 1px solid rgba(99,179,237,.25);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ==========================================
+   MAIN GRID
+========================================== */
+main {
+  padding: 24px 0 32px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================
+   CARDS
+========================================== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ==========================================
+   STAT ROWS
+========================================== */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { font-size: 13px; color: var(--muted); }
+.stat-val   { font-family: var(--font-mono); font-size: 13px; color: var(--text); font-weight: 500; }
+
+/* ==========================================
+   ROBOT VISUAL
+========================================== */
+.robot-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px;
+}
+
+.arm-svg-wrap {
+  position: relative;
+  width: 140px; height: 140px;
+}
+
+/* Animated concentric rings */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(99,179,237,.15);
+  animation: ringPulse 3s infinite;
+  transform: translate(-50%,-50%);
+  top: 50%; left: 50%;
+}
+.ring:nth-child(1) { width: 60px;  height: 60px;  animation-delay: 0s; }
+.ring:nth-child(2) { width: 95px;  height: 95px;  animation-delay: .6s; }
+.ring:nth-child(3) { width: 132px; height: 132px; animation-delay: 1.2s; }
+@keyframes ringPulse {
+  0%,100%{ border-color: rgba(99,179,237,.15); }
+  50%    { border-color: rgba(99,179,237,.45); }
+}
+
+.arm-emoji {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 52px;
+  animation: armFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px rgba(99,179,237,.4));
+}
+@keyframes armFloat {
+  0%,100%{ transform: translate(-50%,-50%) translateY(0) rotate(-2deg); }
+  50%    { transform: translate(-50%,-50%) translateY(-6px) rotate(2deg); }
+}
+
+.gesture-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent2);
+  background: rgba(79,209,197,.08);
+  border: 1px solid rgba(79,209,197,.2);
+  border-radius: 100px;
+  padding: 4px 14px;
+}
+
+/* ==========================================
+   CONTROL BUTTONS
+========================================== */
+.btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn {
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn:hover   { transform: translateY(-2px); border-color: var(--accent); color: var(--accent); }
+.btn:active  { transform: scale(.96); }
+.btn.gesture { border-color: rgba(104,211,145,.3); color: var(--success); }
+.btn.gesture:hover { background: rgba(104,211,145,.08); border-color: var(--success); }
+.btn.manual  { border-color: rgba(99,179,237,.3);  color: var(--accent); }
+.btn.manual:hover  { background: rgba(99,179,237,.08);  border-color: var(--accent); }
+.btn.home    { border-color: rgba(246,173,85,.3);  color: var(--warn); }
+.btn.home:hover    { background: rgba(246,173,85,.08);  border-color: var(--warn); }
+.btn.stop    { border-color: rgba(252,129,129,.3); color: var(--danger); grid-column: 1/-1; }
+.btn.stop:hover    { background: rgba(252,129,129,.08); border-color: var(--danger); }
+.btn.send    { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #080c14; border: none; grid-column: 1/-1; font-size: 14px; padding: 14px; }
+.btn.send:hover { opacity: .9; transform: translateY(-2px); }
+
+/* ==========================================
+   CONTENT AREA (right of sidebar)
+========================================== */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================
+   SERVO GRID
+========================================== */
+.servo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.servo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: border-color .3s;
+}
+.servo-card:hover { border-color: var(--accent); }
+
+.servo-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.servo-angle {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.servo-angle sup { font-size: 18px; font-weight: 400; color: var(--muted); }
+
+/* Arc indicator */
+.arc-wrap {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 100px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.arc-fill {
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 100px;
+  transition: width .1s;
+}
+
+/* Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 100px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(99,179,237,.5);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  transition: transform .15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+
+/* ==========================================
+   BOTTOM ROW: TABLE + LOGS
+========================================== */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+.td-servo { color: var(--muted); }
+.td-angle { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+
+/* Progress bar in table */
+.mini-bar-wrap {
+  width: 80px; height: 4px;
+  background: var(--surface2);
+  border-radius: 100px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+.mini-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  border-radius: 100px;
+  transition: width .3s;
+}
+
+/* Logs */
+.log-box {
+  height: 220px;
+  overflow-y: auto;
+  background: rgba(0,0,0,.3);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.log-box::-webkit-scrollbar { width: 4px; }
+.log-box::-webkit-scrollbar-track { background: transparent; }
+.log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+.log-entry {
+  margin-bottom: 6px;
+  line-height: 1.5;
+  opacity: 0;
+  animation: logIn .3s forwards;
+}
+@keyframes logIn { to { opacity: 1; } }
+.log-time   { color: var(--muted); }
+.log-ok     { color: var(--success); }
+.log-warn   { color: var(--warn); }
+.log-err    { color: var(--danger); }
+.log-info   { color: var(--accent); }
+
+/* ==========================================
+   CORS WARNING BANNER
+========================================== */
+.cors-banner {
+  display: none;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(246,173,85,.08);
+  border: 1px solid rgba(246,173,85,.3);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--warn);
+}
+.cors-banner.visible { display: flex; }
+.cors-banner strong { display: block; margin-bottom: 4px; }
+.cors-banner code {
+  background: rgba(246,173,85,.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.footer-stack { display: flex; gap: 8px; flex-wrap: wrap; }
+.stack-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr; }
+  .servo-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .bottom-row   { grid-template-columns: 1fr; }
+  .servo-grid   { grid-template-columns: 1fr 1fr; }
+  .btn-grid     { grid-template-columns: 1fr 1fr; }
+  header        { gap: 10px; }
+  .header-right { width: 100%; }
+  .ip-wrap input{ width: 120px; }
+}
+@media (max-width: 480px) {
+  .servo-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ========== HEADER ========== -->
+<header>
+  <div class="logo-wrap">
+    <div class="logo-icon">🦾</div>
+    <div class="logo-text">
+      Robotic Arm
+      <small>AI Gesture Control</small>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="ip-wrap">
+      <label>ESP32 IP</label>
+      <input type="text" id="ipInput" value="10.75.133.153" spellcheck="false" placeholder="192.168.x.x">
+    </div>
+    <div class="conn-pill disconnected" id="connPill">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connText">Disconnected</span>
+    </div>
+    <div class="mode-badge" id="modeBadge">—</div>
+  </div>
+</header>
+
+<!-- ========== CORS HELP BANNER ========== -->
+<div class="cors-banner" id="corsBanner">
+  <span style="font-size:20px">⚠️</span>
+  <div>
+    <strong>CORS / Network issue detected</strong>
+    Your ESP32 firmware must include CORS headers so the browser can reach it.
+    Add this inside every route handler on the ESP32:
+    <br><br>
+    <code>server.sendHeader("Access-Control-Allow-Origin", "*");</code><br>
+    <code>server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");</code><br>
+    <code>server.sendHeader("Access-Control-Allow-Headers", "Content-Type");</code><br><br>
+    Also handle <code>HTTP_OPTIONS</code> method and respond with 200 OK + those headers.
+    Alternatively, open this page from a local server on the same machine that proxies requests.
+  </div>
+</div>
+
+<!-- ========== MAIN ========== -->
+<main>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- Robot visual -->
+    <div class="card robot-visual">
+      <div class="arm-svg-wrap">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="arm-emoji">🦾</div>
+      </div>
+      <div class="gesture-chip" id="gestureChip">— no gesture —</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center">
+        FPS: <span id="fps" style="color:var(--text);font-family:var(--font-mono)">—</span>
+      </div>
+    </div>
+
+    <!-- ESP32 Info -->
+    <div class="card">
+      <div class="card-title">ESP32 Status</div>
+      <div class="stat-row">
+        <span class="stat-label">IP Address</span>
+        <span class="stat-val" id="ipDisplay">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Mode</span>
+        <span class="stat-val" id="modeDisplay">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Gesture</span>
+        <span class="stat-val" id="gestureDisplay">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Uptime</span>
+        <span class="stat-val" id="uptimeDisplay">—</span>
+      </div>
+    </div>
+
+    <!-- Control buttons -->
+    <div class="card">
+      <div class="card-title">Control Mode</div>
+      <div class="btn-grid">
+        <button class="btn gesture" id="gestureBtn">🖐 Gesture</button>
+        <button class="btn manual"  id="manualBtn">🕹 Manual</button>
+        <button class="btn home"    id="homeBtn">🏠 Home</button>
+        <button class="btn stop"    id="stopBtn">⛔ Emergency Stop</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Servo sliders -->
+    <div class="servo-grid">
+      <!-- BASE -->
+      <div class="servo-card">
+        <div class="servo-label">Base Rotation</div>
+        <div class="servo-angle"><span id="baseAngle">90</span><sup>°</sup></div>
+        <div class="arc-wrap"><div class="arc-fill" id="baseArc" style="width:50%"></div></div>
+        <input type="range" min="0" max="180" value="90" id="baseSlider">
+      </div>
+      <!-- SHOULDER -->
+      <div class="servo-card">
+        <div class="servo-label">Shoulder</div>
+        <div class="servo-angle"><span id="shoulderAngle">90</span><sup>°</sup></div>
+        <div class="arc-wrap"><div class="arc-fill" id="shoulderArc" style="width:50%"></div></div>
+        <input type="range" min="0" max="180" value="90" id="shoulderSlider">
+      </div>
+      <!-- ARM -->
+      <div class="servo-card">
+        <div class="servo-label">Arm</div>
+        <div class="servo-angle"><span id="armAngle">90</span><sup>°</sup></div>
+        <div class="arc-wrap"><div class="arc-fill" id="armArc" style="width:50%"></div></div>
+        <input type="range" min="0" max="180" value="90" id="armSlider">
+      </div>
+      <!-- GRIPPER -->
+      <div class="servo-card">
+        <div class="servo-label">Gripper</div>
+        <div class="servo-angle"><span id="gripperAngle">90</span><sup>°</sup></div>
+        <div class="arc-wrap"><div class="arc-fill" id="gripperArc" style="width:50%"></div></div>
+        <input type="range" min="0" max="180" value="90" id="gripperSlider">
+      </div>
+    </div>
+
+    <!-- Send button -->
+    <div style="display:grid;gap:0">
+      <button class="btn send" id="sendBtn">↑ Send Position to ESP32</button>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="bottom-row">
+
+      <!-- Live angles table -->
+      <div class="card">
+        <div class="card-title">Live Servo Angles</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Joint</th>
+              <th>Angle</th>
+              <th>Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-servo">Base</td>
+              <td class="td-angle" id="tBase">90°</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" id="tBaseBar" style="width:50%"></div></div></td>
+            </tr>
+            <tr>
+              <td class="td-servo">Shoulder</td>
+              <td class="td-angle" id="tShoulder">90°</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" id="tShoulderBar" style="width:50%"></div></div></td>
+            </tr>
+            <tr>
+              <td class="td-servo">Arm</td>
+              <td class="td-angle" id="tArm">90°</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" id="tArmBar" style="width:50%"></div></div></td>
+            </tr>
+            <tr>
+              <td class="td-servo">Gripper</td>
+              <td class="td-angle" id="tGripper">90°</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" id="tGripperBar" style="width:50%"></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Logs -->
+      <div class="card">
+        <div class="card-title">System Log</div>
+        <div class="log-box" id="logBox"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <span>AI Gesture Controlled Robotic Arm</span>
+  <div class="footer-stack">
+    <span class="stack-chip">ESP32</span>
+    <span class="stack-chip">MediaPipe</span>
+    <span class="stack-chip">OpenCV</span>
+    <span class="stack-chip">Python</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+let ESP32_IP   = "10.75.133.153";
+let BASE_URL   = `http://${ESP32_IP}`;
+let retryCount = 0;
+let connected  = false;
+let uptimeStart = null;
+let currentMode = "gesture";
+
+// True while any slider thumb is being dragged — pauses /status from overwriting sliders
+let isDragging = false;
+let dragReleaseTimer = null;
+
+// Throttle: only send one POST per 80ms while dragging
+let sendThrottle = null;
+
+const connPill       = document.getElementById("connPill");
+const connText       = document.getElementById("connText");
+const modeBadge      = document.getElementById("modeBadge");
+const ipInput        = document.getElementById("ipInput");
+const ipDisplay      = document.getElementById("ipDisplay");
+const modeDisplay    = document.getElementById("modeDisplay");
+const gestureDisplay = document.getElementById("gestureDisplay");
+const gestureChip    = document.getElementById("gestureChip");
+const fpsEl          = document.getElementById("fps");
+const uptimeEl       = document.getElementById("uptimeDisplay");
+const logBox         = document.getElementById("logBox");
+const corsBanner     = document.getElementById("corsBanner");
+const servos         = ["base","shoulder","arm","gripper"];
+
+ipInput.addEventListener("change", () => {
+  ESP32_IP = ipInput.value.trim();
+  BASE_URL  = `http://${ESP32_IP}`;
+  ipDisplay.textContent = ESP32_IP;
+  addLog(`IP updated → ${ESP32_IP}`, "info");
+  retryCount = 0;
+  getStatus();
+});
+
+function addLog(msg, type = "ok") {
+  const t   = new Date().toLocaleTimeString("en-US", { hour12: false });
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  const icon = { ok:"✔", warn:"⚠", err:"✘", info:"→" }[type] || "·";
+  div.innerHTML = `<span class="log-time">[${t}]</span> <span class="log-${type}">${icon} ${msg}</span>`;
+  logBox.prepend(div);
+  while (logBox.children.length > 60) logBox.removeChild(logBox.lastChild);
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Update angle display + arc + table.
+// In manual mode the slider is the SOURCE of truth — never overwrite it from poll.
+// In gesture mode the poll drives everything including the slider.
+function setServoDisplay(name, val) {
+  const v   = Math.round(val);
+  const pct = (v / 180 * 100).toFixed(1) + "%";
+  document.getElementById(name + "Angle").textContent          = v;
+  document.getElementById(name + "Arc").style.width            = pct;
+  document.getElementById("t" + cap(name)).textContent         = v + "°";
+  document.getElementById("t" + cap(name) + "Bar").style.width = pct;
+  // Only update the slider thumb in gesture mode (poll is the source of truth there)
+  if (currentMode !== "manual") {
+    document.getElementById(name + "Slider").value = v;
+  }
+}
+
+function setConnected(ok) {
+  if (ok === connected && retryCount !== 0) return;
+  connected = ok;
+  connPill.className   = "conn-pill " + (ok ? "connected" : "disconnected");
+  connText.textContent = ok ? "Connected" : "Disconnected";
+  if (ok && !uptimeStart) {
+    uptimeStart = Date.now();
+    addLog("ESP32 connected", "ok");
+  }
+  if (!ok && retryCount === 1) {
+    addLog("Cannot reach ESP32 — check IP and CORS headers", "err");
+  }
+}
+
+async function getStatus() {
+  try {
+    const res = await fetch(BASE_URL + "/status", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      signal: AbortSignal.timeout(1500)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    retryCount = 0;
+    corsBanner.classList.remove("visible");
+    setConnected(true);
+
+    // Only update slider positions from ESP32 when not dragging
+    if (data.base      !== undefined) setServoDisplay("base",     data.base);
+    if (data.shoulder  !== undefined) setServoDisplay("shoulder", data.shoulder);
+    if (data.arm       !== undefined) setServoDisplay("arm",      data.arm);
+    if (data.gripper   !== undefined) setServoDisplay("gripper",  data.gripper);
+
+    if (data.mode) {
+      currentMode             = data.mode;
+      modeBadge.textContent   = data.mode.toUpperCase();
+      modeDisplay.textContent = data.mode;
+    }
+    if (data.gesture) {
+      gestureChip.textContent    = data.gesture;
+      gestureDisplay.textContent = data.gesture;
+    }
+    if (data.fps) fpsEl.textContent = data.fps;
+    ipDisplay.textContent = ESP32_IP;
+
+  } catch {
+    retryCount++;
+    setConnected(false);
+    if (retryCount >= 3) corsBanner.classList.add("visible");
+  }
+}
+
+setInterval(() => {
+  if (!uptimeStart) return;
+  const s  = Math.floor((Date.now() - uptimeStart) / 1000);
+  const h  = Math.floor(s / 3600);
+  const m  = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  uptimeEl.textContent = [h, m, ss].map(n => String(n).padStart(2, "0")).join(":");
+}, 1000);
+
+async function postServo(payload) {
+  try {
+    const res = await fetch(BASE_URL + "/servo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(2000)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    setConnected(true);
+  } catch (err) {
+    addLog("Send failed: " + (err.message || "network error"), "err");
+    setConnected(false);
+  }
+}
+
+async function sendServo() {
+  const payload = {
+    base:     Number(document.getElementById("baseSlider").value),
+    shoulder: Number(document.getElementById("shoulderSlider").value),
+    arm:      Number(document.getElementById("armSlider").value),
+    gripper:  Number(document.getElementById("gripperSlider").value)
+  };
+  const sendBtn = document.getElementById("sendBtn");
+  sendBtn.textContent  = "Sending…";
+  sendBtn.style.opacity = ".7";
+  await postServo(payload);
+  addLog(`Servo → B:${payload.base}° S:${payload.shoulder}° A:${payload.arm}° G:${payload.gripper}°`, "ok");
+  sendBtn.textContent  = "↑ Send Position to ESP32";
+  sendBtn.style.opacity = "1";
+}
+
+async function changeMode(mode) {
+  try {
+    await fetch(BASE_URL + "/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode }),
+      signal: AbortSignal.timeout(2000)
+    });
+    currentMode             = mode;
+    modeBadge.textContent   = mode.toUpperCase();
+    modeDisplay.textContent = mode;
+    addLog("Mode → " + mode, "info");
+  } catch {
+    addLog("Mode change failed", "err");
+  }
+}
+
+async function goHome() {
+  servos.forEach(j => setServoDisplay(j, 90));
+  servos.forEach(j => { document.getElementById(j + "Slider").value = 90; });
+  addLog("Returning to home position (90°)", "info");
+  try {
+    await fetch(BASE_URL + "/servo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ base:90, shoulder:90, arm:90, gripper:90 }),
+      signal: AbortSignal.timeout(2000)
+    });
+    addLog("Home position confirmed", "ok");
+  } catch {
+    addLog("Home command send failed", "err");
+  }
+}
+
+async function emergencyStop() {
+  addLog("⛔ EMERGENCY STOP triggered", "err");
+  try {
+    await fetch(BASE_URL + "/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+      signal: AbortSignal.timeout(2000)
+    });
+    addLog("Stop command sent", "ok");
+  } catch {
+    try {
+      await fetch(BASE_URL + "/mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "stop" }),
+        signal: AbortSignal.timeout(2000)
+      });
+    } catch {}
+    addLog("Using fallback stop via mode endpoint", "warn");
+  }
+}
+
+document.getElementById("gestureBtn").onclick = () => changeMode("gesture");
+document.getElementById("manualBtn").onclick  = () => changeMode("manual");
+document.getElementById("homeBtn").onclick    = goHome;
+document.getElementById("stopBtn").onclick    = emergencyStop;
+document.getElementById("sendBtn").onclick    = sendServo;
+
+// Slider bindings — drag-aware
+servos.forEach(name => {
+  const slider = document.getElementById(name + "Slider");
+
+  slider.addEventListener("mousedown",  startDrag);
+  slider.addEventListener("touchstart", startDrag, { passive: true });
+
+  slider.addEventListener("input", () => {
+    const v = Number(slider.value);
+    // Update display without touching the slider value (already set by user)
+    const pct = (v / 180 * 100).toFixed(1) + "%";
+    document.getElementById(name + "Angle").textContent          = v;
+    document.getElementById(name + "Arc").style.width            = pct;
+    document.getElementById("t" + cap(name)).textContent         = v + "°";
+    document.getElementById("t" + cap(name) + "Bar").style.width = pct;
+
+    // Snapshot values immediately — reading inside setTimeout is too late
+    // because the /status poll may have already reset the sliders by then
+    if (currentMode === "manual") {
+      const snapshot = {
+        base:     Number(document.getElementById("baseSlider").value),
+        shoulder: Number(document.getElementById("shoulderSlider").value),
+        arm:      Number(document.getElementById("armSlider").value),
+        gripper:  Number(document.getElementById("gripperSlider").value)
+      };
+      clearTimeout(sendThrottle);
+      sendThrottle = setTimeout(() => postServo(snapshot), 80);
+    }
+  });
+});
+
+function startDrag() {
+  isDragging = true;
+  clearTimeout(dragReleaseTimer);
+}
+
+// Release drag on mouseup / touchend anywhere on the page
+document.addEventListener("mouseup",   endDrag);
+document.addEventListener("touchend",  endDrag);
+
+function endDrag() {
+  // 600ms lock after release — gives the final postServo time to complete
+  // before /status polling is allowed to reset slider positions again
+  clearTimeout(dragReleaseTimer);
+  dragReleaseTimer = setTimeout(() => {
+    isDragging = false;
+  }, 600);
+}
+
+setInterval(getStatus, 500);
+
+ipDisplay.textContent = ESP32_IP;
+addLog("Dashboard initialised", "info");
+addLog("Connecting to ESP32 at " + ESP32_IP + "…", "info");
+getStatus();
+</script>
+</body>
+</html>
